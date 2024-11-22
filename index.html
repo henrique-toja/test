@@ -64,7 +64,7 @@
 
     #players {
       display: flex;
-      justify-content: space-between;
+      justify-content: center;
       margin: 20px auto;
       width: 90%;
       max-width: 400px;
@@ -158,8 +158,8 @@
 
   <div id="chess-game" style="display:none;">
     <div id="players">
-      <div id="player1" class="player"></div>
-      <div id="player2" class="player"></div>
+      <div id="player1" class="player" style="background-image: url('agatha-image.jpg');"></div> <!-- Coloque a imagem de Agatha aqui -->
+      <div id="player2" class="player" style="background-image: url('henrique-image.jpg');"></div> <!-- Coloque a imagem de Henrique aqui -->
     </div>
 
     <div id="chessboard"></div>
@@ -170,7 +170,6 @@
     const board = document.getElementById("chessboard");
     const turnDisplay = document.getElementById("turn-display");
 
-    // Chess pieces unicode symbols
     const initialBoard = [
       ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
       ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
@@ -213,8 +212,7 @@
           if (piece) {
             const pieceElement = document.createElement("span");
             pieceElement.classList.add("piece");
-            
-            // Determine piece color based on unicode symbol
+
             if (["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece)) {
               pieceElement.classList.add("blue-piece");
             } else {
@@ -224,18 +222,16 @@
             pieceElement.textContent = piece;
             pieceElement.dataset.row = i;
             pieceElement.dataset.col = j;
-            
+
             square.appendChild(pieceElement);
           }
 
-          // Click event for piece selection and movement
           square.addEventListener("click", () => handleSquareClick(i, j));
 
           board.appendChild(square);
         }
       }
 
-      // Update turn display
       turnDisplay.textContent = currentTurn === 'pink' 
         ? "Vez de: Agatha (Peças Rosas)" 
         : "Vez de: Henrique (Peças Azuis)";
@@ -246,20 +242,15 @@
       const clickedPiece = clickedSquare.querySelector(".piece");
 
       if (selectedPiece) {
-        // If a piece is already selected, attempt to move
         const fromRow = parseInt(selectedPiece.dataset.row);
         const fromCol = parseInt(selectedPiece.dataset.col);
 
-        // Basic move (no chess rules validation yet)
         if (fromRow !== row || fromCol !== col) {
-          // Move the piece
           initialBoard[row][col] = selectedPiece.textContent;
           initialBoard[fromRow][fromCol] = "";
 
-          // Switch turns
           currentTurn = currentTurn === 'pink' ? 'blue' : 'pink';
 
-          // Remove selection highlight
           document.querySelectorAll('.selected').forEach(el => 
             el.classList.remove('selected'));
 
@@ -269,8 +260,5 @@
         }
       }
 
-      // If no piece was previously selected, select the clicked piece
       if (clickedPiece) {
-        // Check if it's the correct player's turn
-        const isPinkPiece = clickedPiece.classList.contains('pink-piece');
-        const isBluePiece = clickedPiece.classList.contains('blue
+        const isPinkPiece = clickedPiece.classList.contains('
