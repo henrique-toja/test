@@ -48,6 +48,45 @@
       margin: 10px 0;
     }
 
+    #binance-news {
+      font-family: Arial, sans-serif;
+      margin: 20px auto;
+      max-width: 600px;
+    }
+
+    #binance-news h2 {
+      color: #820ad1;
+      text-align: center;
+    }
+
+    #news-list {
+      padding: 0;
+    }
+
+    #news-list li {
+      list-style: none;
+      margin: 15px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+
+    #news-list a {
+      text-decoration: none;
+      color: #820ad1;
+      font-weight: bold;
+    }
+
+    #news-list a:hover {
+      text-decoration: underline;
+    }
+
+    #news-list p {
+      margin: 5px 0;
+      color: #555;
+    }
+
     footer {
       text-align: center;
       padding: 10px 0;
@@ -79,6 +118,13 @@
         <p><strong>Imóveis de Luxo:</strong> <span id="btc-real-estate">Carregando...</span></p>
       </div>
     </section>
+
+    <section id="binance-news">
+      <h2>Últimas Notícias da Binance</h2>
+      <ul id="news-list">
+        <li>Carregando notícias...</li>
+      </ul>
+    </section>
   </main>
 
   <footer>
@@ -102,7 +148,38 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', fetchBitcoinPrices);
+    async function fetchBinanceNews() {
+      try {
+        const feedURL = 'https://api.rss2json.com/v1/api.json?rss_url=https://www.binance.com/en/rss/news';
+        const response = await fetch(feedURL);
+        if (!response.ok) {
+          throw new Error('Erro ao carregar o feed RSS');
+        }
+        const data = await response.json();
+        displayNews(data.items);
+      } catch (error) {
+        console.error('Erro ao buscar notícias:', error);
+        document.getElementById('news-list').innerHTML = '<li>Não foi possível carregar as notícias.</li>';
+      }
+    }
+
+    function displayNews(newsItems) {
+      const newsList = document.getElementById('news-list');
+      newsList.innerHTML = ''; // Limpa a mensagem de carregamento
+      newsItems.slice(0, 5).forEach((item) => {
+        const listItem = document.createElement('li');
+        listItem.innerHTML = `
+          <a href="${item.link}" target="_blank">${item.title}</a>
+          <p>${item.description}</p>
+        `;
+        newsList.appendChild(listItem);
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchBitcoinPrices();
+      fetchBinanceNews();
+    });
   </script>
 </body>
 </html>
