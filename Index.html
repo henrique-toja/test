@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Por que Bitcoin?</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      margin: 0;
+      padding: 0;
+      color: #333;
+    }
+
+    header {
+      background-color: #820ad1;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 2.5em;
+    }
+
+    header p {
+      margin: 10px 0 0;
+    }
+
+    main {
+      padding: 20px;
+    }
+
+    section {
+      margin-bottom: 20px;
+    }
+
+    section h2 {
+      color: #820ad1;
+      text-align: center;
+    }
+
+    #price-container p {
+      text-align: center;
+      font-size: 1.2em;
+      margin: 10px 0;
+    }
+
+    footer {
+      text-align: center;
+      padding: 10px 0;
+      background: #f4f4f4;
+      border-top: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Por que Bitcoin?</h1>
+    <p>Entenda o impacto do Bitcoin no mundo financeiro e acompanhe as últimas notícias.</p>
+  </header>
+
+  <main>
+    <section id="sobre-bitcoin">
+      <h2>O que é Bitcoin?</h2>
+      <p>
+        Bitcoin é uma moeda digital descentralizada, criada em 2009, que permite transações ponto a ponto sem a necessidade de intermediários como bancos ou governos. 
+        Ele é baseado em uma tecnologia chamada blockchain, que garante segurança e transparência em todas as transações.
+      </p>
+    </section>
+
+    <section id="bitcoin-widget">
+      <h2>Preço do Bitcoin</h2>
+      <div id="price-container">
+        <p><strong>Em relação ao Dólar:</strong> <span id="btc-usd">Carregando...</span></p>
+        <p><strong>Em relação ao Ouro:</strong> <span id="btc-gold">Carregando...</span></p>
+        <p><strong>Imóveis de Luxo:</strong> <span id="btc-real-estate">Carregando...</span></p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>&copy; 2024 Por que Bitcoin? Todos os direitos reservados.</p>
+  </footer>
+
+  <script>
+    async function fetchBitcoinPrices() {
+      try {
+        // API para buscar o preço do Bitcoin
+        const response = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd,xau');
+        const data = await response.json();
+
+        // Atualizando preços no widget
+        document.getElementById('btc-usd').textContent = `$${data.bitcoin.usd.toLocaleString()}`;
+        document.getElementById('btc-gold').textContent = `${(data.bitcoin.usd / data.bitcoin.xau).toFixed(2)} onças de ouro`;
+        document.getElementById('btc-real-estate').textContent = `${(1000000 / data.bitcoin.usd).toFixed(2)} BTC por imóvel avaliado em 1 milhão de dólares`;
+      } catch (error) {
+        console.error('Erro ao buscar preços:', error);
+        document.getElementById('price-container').textContent = 'Não foi possível carregar os preços.';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchBitcoinPrices);
+  </script>
+</body>
+</html>
