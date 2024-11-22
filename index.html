@@ -156,7 +156,7 @@
         <h2>Login</h2>
         <input type="text" id="username" placeholder="Usuário" />
         <input type="password" id="password" placeholder="Senha" />
-        <button onclick="login()">Entrar</button>
+        <button id="login-button">Entrar</button>
         <p id="login-error" style="color: red; display: none;">Credenciais inválidas. Tente novamente.</p>
       </div>
     </div>
@@ -246,10 +246,9 @@
         : "Vez de: Henrique (Peças Azuis)";
     }
 
-    function handleSquareClick(row, col) {
-      const clickedSquare = board.querySelector(`[data-row="${row}"][data-col="${col}"]`);
-      const clickedPiece = clickedSquare.querySelector(".piece");
+    // Adicionando o evento de clique no botão de login
+    document.getElementById("login-button").addEventListener("click", login);
+  </script>
 
-      if (selectedPiece) {
-        const fromRow = parseInt(selectedPiece.dataset.row);
-        const fromCol =
+</body>
+</html>
