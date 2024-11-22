@@ -1,229 +1,12 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Xadrez - Agatha vs Henrique</title>
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background-color: #f5f5f5;
-      color: #333;
-      margin: 0;
-      padding: 0;
-    }
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
 
-    header {
-      background-color: #820ad1;
-      color: white;
-      padding: 10px 0;
-    }
-
-    h1 {
-      margin: 0;
-    }
-
-    #login-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #f5f5f5;
-    }
-
-    #login-form {
-      background-color: white;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-      width: 300px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      margin: 10px 0;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      background-color: #820ad1;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #6f06b1;
-    }
-
-    #players {
-      display: flex;
-      justify-content: space-around;
-      margin: 20px auto;
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .player {
-      text-align: center;
-    }
-
-    .player-avatar {
-      width: 100px;
-      height: 100px;
-      background-size: cover;
-      background-position: center;
-      border-radius: 50%;
-      border: 3px solid;
-      margin: 0 auto;
-    }
-
-    .player-name {
-      margin-top: 10px;
-      font-weight: bold;
-    }
-
-    #player1 .player-avatar {
-      border-color: #FF69B4;
-    }
-
-    #player2 .player-avatar {
-      border-color: #4169E1;
-    }
-
-    #chessboard {
-      display: grid;
-      grid-template-columns: repeat(8, 50px);
-      grid-template-rows: repeat(8, 50px);
-      gap: 0;
-      margin: 0 auto;
-      width: 400px;
-      height: 400px;
-      border: 3px solid #333;
-    }
-
-    .square {
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 24px;
-      position: relative;
-    }
-
-    .light {
-      background-color: #f0d9b5;
-    }
-
-    .dark {
-      background-color: #b58863;
-    }
-
-    .piece {
-      cursor: grab;
-      user-select: none;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
-
-    .pink-piece {
-      color: #FF69B4;
-    }
-
-    .blue-piece {
-      color: #4169E1;
-    }
-
-    .selected {
-      background-color: rgba(255, 255, 0, 0.3);
-    }
-
-    #status-message {
-      margin: 20px 0;
-      font-weight: bold;
-      color: #820ad1;
-    }
-
-    .waiting-message {
-      color: #666;
-      font-style: italic;
-    }
-  </style>
-</head>
-<body>
-  <header>
-    <h1>Xadrez - Agatha vs Henrique</h1>
-  </header>
-
-  <main id="main-content">
-    <div id="login-container">
-      <div id="login-form">
-        <h2>Login</h2>
-        <input type="text" id="username" placeholder="Usuário" />
-        <input type="password" id="password" placeholder="Senha" />
-        <button id="login-button">Entrar</button>
-        <p id="login-error" style="color: red; display: none;">Credenciais inválidas. Tente novamente.</p>
-      </div>
-    </div>
-  </main>
-
-  <div id="chess-game" style="display:none;">
-    <div id="players">
-      <div id="player1" class="player">
-        <div class="player-avatar"></div>
-        <div class="player-name">Agatha</div>
-      </div>
-      <div id="player2" class="player">
-        <div class="player-avatar"></div>
-        <div class="player-name">Henrique</div>
-      </div>
-    </div>
-
-    <div id="status-message"></div>
-    <div id="chessboard"></div>
-    <div id="turn-display"></div>
-  </div>
-
-  <script>
-    // Configuração do Firebase
-    const firebaseConfig = {
-      // Substitua com suas credenciais do Firebase
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_AUTH_DOMAIN",
-      databaseURL: "YOUR_DATABASE_URL",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_STORAGE_BUCKET",
-      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-
-    // Inicializar Firebase
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
-
-    const board = document.getElementById("chessboard");
-    const turnDisplay = document.getElementById("turn-display");
-    const statusMessage = document.getElementById("status-message");
-
-    let currentPlayer = null;
-    let gameRef = null;
-    let currentTurn = 'pink';
-    let selectedPiece = null;
-
-    const initialBoard = [
+const ChessGame = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentPlayer, setCurrentPlayer] = useState(null);
+  const [selectedPiece, setSelectedPiece] = useState(null);
+  const [gameState, setGameState] = useState({
+    board: [
       ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
       ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
       ["", "", "", "", "", "", "", ""],
@@ -232,180 +15,161 @@
       ["", "", "", "", "", "", "", ""],
       ["♙", "♙", "♙", "♙", "♙", "♙", "♙", "♙"],
       ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"]
-    ];
+    ],
+    currentTurn: 'pink',
+    players: {}
+  });
+  const [loginError, setLoginError] = useState(false);
 
-    async function login() {
-      const username = document.getElementById("username").value.toLowerCase();
-      const password = document.getElementById("password").value;
-
-      if ((username === "henrique" && password === "toja") || 
-          (username === "agatha" && password === "toja")) {
-
-        currentPlayer = username;
-
-        // Conectar ao jogo existente ou criar um novo
-        gameRef = database.ref('chess_game');
-
-        const gameSnapshot = await gameRef.once('value');
-        if (!gameSnapshot.exists()) {
-          // Criar novo jogo
-          await gameRef.set({
-            board: initialBoard,
-            currentTurn: 'pink',
-            players: {
-              [username]: true
-            }
-          });
-        } else {
-          // Juntar-se ao jogo existente
-          await gameRef.child('players').update({
-            [username]: true
-          });
+  const handleLogin = (username, password) => {
+    if ((username.toLowerCase() === "henrique" && password === "toja") || 
+        (username.toLowerCase() === "agatha" && password === "toja")) {
+      setCurrentPlayer(username.toLowerCase());
+      setIsLoggedIn(true);
+      setLoginError(false);
+      
+      // In a real app, you'd update Firebase here
+      setGameState(prev => ({
+        ...prev,
+        players: {
+          ...prev.players,
+          [username.toLowerCase()]: true
         }
+      }));
+    } else {
+      setLoginError(true);
+    }
+  };
 
-        // Configurar listeners em tempo real
-        setupGameListeners();
+  const handleSquareClick = (row, col) => {
+    if (!canPlayerMove()) return;
 
-        document.getElementById("login-container").style.display = "none";
-        document.getElementById("chess-game").style.display = "block";
+    if (selectedPiece) {
+      const [fromRow, fromCol] = selectedPiece;
+      if (isValidMove(fromRow, fromCol, row, col)) {
+        const newBoard = gameState.board.map(row => [...row]);
+        newBoard[row][col] = newBoard[fromRow][fromCol];
+        newBoard[fromRow][fromCol] = "";
 
-        // Atualizar UI com base no jogador atual
-        updatePlayerUI();
-      } else {
-        document.getElementById("login-error").style.display = "block";
+        setGameState(prev => ({
+          ...prev,
+          board: newBoard,
+          currentTurn: prev.currentTurn === 'pink' ? 'blue' : 'pink'
+        }));
+        setSelectedPiece(null);
       }
+    } else if (gameState.board[row][col] && isPieceOwnedByCurrentPlayer(gameState.board[row][col])) {
+      setSelectedPiece([row, col]);
     }
+  };
 
-    function setupGameListeners() {
-      gameRef.on('value', (snapshot) => {
-        const gameData = snapshot.val();
-        if (gameData) {
-          currentTurn = gameData.currentTurn;
-          renderBoard(gameData.board);
-          updateTurnDisplay();
-          updateStatusMessage(gameData.players);
-        }
-      });
-    }
+  const canPlayerMove = () => {
+    return (currentPlayer === 'agatha' && gameState.currentTurn === 'pink') ||
+           (currentPlayer === 'henrique' && gameState.currentTurn === 'blue');
+  };
 
-    function updateStatusMessage(players) {
-      const playerCount = Object.keys(players).length;
-      if (playerCount < 2) {
-        statusMessage.textContent = "Aguardando outro jogador...";
-        statusMessage.classList.add('waiting-message');
-      } else {
-        statusMessage.textContent = "";
-        statusMessage.classList.remove('waiting-message');
-      }
-    }
+  const isPieceOwnedByCurrentPlayer = (piece) => {
+    const isPinkPiece = !["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece);
+    return (currentPlayer === 'agatha' && isPinkPiece) ||
+           (currentPlayer === 'henrique' && !isPinkPiece);
+  };
 
-    function updatePlayerUI() {
-      const isAgatha = currentPlayer === 'agatha';
-      document.getElementById("player1").style.opacity = isAgatha ? "1" : "0.5";
-      document.getElementById("player2").style.opacity = isAgatha ? "0.5" : "1";
-    }
+  const isValidMove = (fromRow, fromCol, toRow, toCol) => {
+    // Implement chess rules here
+    return true;
+  };
 
-    function renderBoard(boardState) {
-      board.innerHTML = "";
-      for (let i = 0; i < 8; i++) {
-        for (let j = 0; j < 8; j++) {
-          const square = document.createElement("div");
-          square.classList.add("square");
-          square.classList.add((i + j) % 2 === 0 ? "light" : "dark");
-          square.dataset.row = i;
-          square.dataset.col = j;
+  const LoginForm = () => (
+    <div className="flex justify-center items-center min-h-screen bg-gray-100">
+      <Card className="w-96 p-6">
+        <h2 className="text-2xl font-bold mb-4 text-center">Login</h2>
+        <input
+          type="text"
+          placeholder="Usuário"
+          className="w-full p-2 mb-4 border rounded"
+          onChange={(e) => setLoginError(false)}
+        />
+        <input
+          type="password"
+          placeholder="Senha"
+          className="w-full p-2 mb-4 border rounded"
+          onChange={(e) => setLoginError(false)}
+        />
+        <button
+          onClick={(e) => {
+            const username = e.target.parentElement.querySelector('input[type="text"]').value;
+            const password = e.target.parentElement.querySelector('input[type="password"]').value;
+            handleLogin(username, password);
+          }}
+          className="w-full p-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+        >
+          Entrar
+        </button>
+        {loginError && (
+          <p className="text-red-500 mt-2 text-center">Credenciais inválidas. Tente novamente.</p>
+        )}
+      </Card>
+    </div>
+  );
 
-          const piece = boardState[i][j];
-          if (piece) {
-            const pieceElement = document.createElement("span");
-            pieceElement.classList.add("piece");
+  const ChessBoard = () => (
+    <div className="flex flex-col items-center">
+      <div className="flex justify-around w-full max-w-md mb-8">
+        <div className={`text-center ${currentPlayer === 'agatha' ? 'opacity-100' : 'opacity-50'}`}>
+          <div className="w-24 h-24 rounded-full border-4 border-pink-400 mx-auto mb-2" />
+          <div className="font-bold">Agatha</div>
+        </div>
+        <div className={`text-center ${currentPlayer === 'henrique' ? 'opacity-100' : 'opacity-50'}`}>
+          <div className="w-24 h-24 rounded-full border-4 border-blue-500 mx-auto mb-2" />
+          <div className="font-bold">Henrique</div>
+        </div>
+      </div>
 
-            if (["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece)) {
-              pieceElement.classList.add("blue-piece");
-            } else {
-              pieceElement.classList.add("pink-piece");
-            }
+      {Object.keys(gameState.players).length < 2 && (
+        <div className="text-gray-600 italic mb-4">Aguardando outro jogador...</div>
+      )}
 
-            pieceElement.textContent = piece;
-            pieceElement.dataset.row = i;
-            pieceElement.dataset.col = j;
+      <div className="grid grid-cols-8 gap-0 w-[400px] h-[400px] border-2 border-gray-800">
+        {gameState.board.map((row, i) => 
+          row.map((piece, j) => (
+            <div
+              key={`${i}-${j}`}
+              onClick={() => handleSquareClick(i, j)}
+              className={`
+                w-[50px] h-[50px] flex items-center justify-center relative
+                ${(i + j) % 2 === 0 ? 'bg-[#f0d9b5]' : 'bg-[#b58863]'}
+                ${selectedPiece && selectedPiece[0] === i && selectedPiece[1] === j ? 'bg-yellow-200 bg-opacity-30' : ''}
+              `}
+            >
+              {piece && (
+                <span className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-2xl cursor-grab select-none
+                  ${["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece) ? 'text-blue-500' : 'text-pink-400'}
+                `}>
+                  {piece}
+                </span>
+              )}
+            </div>
+          ))
+        )}
+      </div>
 
-            square.appendChild(pieceElement);
-          }
+      <div className="mt-4 font-bold text-purple-600">
+        {gameState.currentTurn === 'pink' 
+          ? "Vez de: Agatha (Peças Rosas)" 
+          : "Vez de: Henrique (Peças Azuis)"}
+      </div>
+    </div>
+  );
 
-          square.addEventListener("click", handleSquareClick);
-          board.appendChild(square);
-        }
-      }
-    }
+  return (
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-purple-600 text-white py-4">
+        <h1 className="text-2xl font-bold text-center">Xadrez - Agatha vs Henrique</h1>
+      </header>
+      
+      {!isLoggedIn ? <LoginForm /> : <ChessBoard />}
+    </div>
+  );
+};
 
-    async function handleSquareClick(event) {
-      if (!canPlayerMove()) return;
-
-      const square = event.target.closest('.square');
-      const row = parseInt(square.dataset.row);
-      const col = parseInt(square.dataset.col);
-
-      const gameSnapshot = await gameRef.once('value');
-      const currentBoard = gameSnapshot.val().board;
-
-      if (selectedPiece) {
-        // Mover peça
-        const fromRow = parseInt(selectedPiece.dataset.row);
-        const fromCol = parseInt(selectedPiece.dataset.col);
-
-        if (isValidMove(fromRow, fromCol, row, col)) {
-          const newBoard = [...currentBoard];
-          newBoard[row][col] = currentBoard[fromRow][fromCol];
-          newBoard[fromRow][fromCol] = "";
-
-          await gameRef.update({
-            board: newBoard,
-            currentTurn: currentTurn === 'pink' ? 'blue' : 'pink'
-          });
-
-          selectedPiece.closest('.square').classList.remove('selected');
-          selectedPiece = null;
-        }
-      } else if (currentBoard[row][col] && isPieceOwnedByCurrentPlayer(currentBoard[row][col])) {
-        // Selecionar peça
-        square.classList.add('selected');
-        selectedPiece = square.querySelector('.piece');
-      }
-    }
-
-    function canPlayerMove() {
-      return (currentPlayer === 'agatha' && currentTurn === 'pink') ||
-             (currentPlayer === 'henrique' && currentTurn === 'blue');
-    }
-
-    function isPieceOwnedByCurrentPlayer(piece) {
-      const isPinkPiece = !["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece);
-      return (currentPlayer === 'agatha' && isPinkPiece) ||
-             (currentPlayer === 'henrique' && !isPinkPiece);
-    }
-
-    function isValidMove(fromRow, fromCol, toRow, toCol) {
-      // Implementar regras de movimento do xadrez aqui
-      // Por simplicidade, permitindo qualquer movimento por enquanto
-      return true;
-    }
-
-    function updateTurnDisplay() {
-      turnDisplay.textContent = currentTurn === 'pink' 
-        ? "Vez de: Agatha (Peças Rosas)" 
-        : "Vez de: Henrique (Peças Azuis)";
-    }
-
-    // Event Listeners
-    document.getElementById("login-button").addEventListener("click", login);
-
-    // Limpar referências do Firebase ao fechar a página
-    window.addEventListener('beforeunload', () => {
-      if (gameRef && currentPlayer) {
-        gameRef.child('players').child(currentPlayer).remove();
-      }
-    });
-  </script>
-</body>
-</html>
+export default ChessGame;
