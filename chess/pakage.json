@@ -1,0 +1,7 @@
+{
+  "scripts": {
+    "build": "react-scripts build",
+    "deploy": "gh-pages -d build"
+  },
+  "homepage": "https://henriquetoja.github.io/test"  // Substitua 'test' pelo nome do seu repositório
+}
