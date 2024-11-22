@@ -136,6 +136,12 @@
     .selected {
       background-color: rgba(255, 255, 0, 0.3);
     }
+
+    /* Novos estilos para o erro de login */
+    #login-error {
+      color: red;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -184,20 +190,23 @@
     let currentTurn = 'pink'; // Starting with Agatha (pink)
     let selectedPiece = null;
 
-    // Simple login validation function
+    // Função de login corrigida
     function login() {
       const username = document.getElementById("username").value;
       const password = document.getElementById("password").value;
 
-      if ((username === "henrique" || username === "Agatha") && password === "toja") {
+      // Verificando as credenciais
+      if ((username === "henrique" && password === "toja") || 
+          (username === "Agatha" && password === "toja")) {
         document.getElementById("login-container").style.display = "none";
         document.getElementById("chess-game").style.display = "block";
         renderBoard();
       } else {
-        document.getElementById("login-error").style.display = "block";
+        document.getElementById("login-error").style.display = "block"; // Exibe a mensagem de erro
       }
     }
 
+    // Função para renderizar o tabuleiro
     function renderBoard() {
       board.innerHTML = "";
       for (let i = 0; i < 8; i++) {
@@ -243,22 +252,4 @@
 
       if (selectedPiece) {
         const fromRow = parseInt(selectedPiece.dataset.row);
-        const fromCol = parseInt(selectedPiece.dataset.col);
-
-        if (fromRow !== row || fromCol !== col) {
-          initialBoard[row][col] = selectedPiece.textContent;
-          initialBoard[fromRow][fromCol] = "";
-
-          currentTurn = currentTurn === 'pink' ? 'blue' : 'pink';
-
-          document.querySelectorAll('.selected').forEach(el => 
-            el.classList.remove('selected'));
-
-          selectedPiece = null;
-          renderBoard();
-          return;
-        }
-      }
-
-      if (clickedPiece) {
-        const isPinkPiece = clickedPiece.classList.contains('
+        const fromCol =
