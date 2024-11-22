@@ -24,9 +24,46 @@
       margin: 0;
     }
 
+    #login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    #login-form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #820ad1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #6f06b1;
+    }
+
     #players {
       display: flex;
-      flex-direction: column; /* Alinha os jogadores verticalmente */
       justify-content: space-between;
       margin: 20px auto;
       width: 90%;
@@ -40,17 +77,14 @@
       background-position: center;
       border-radius: 50%;
       border: 3px solid;
-      margin: 10px auto;
     }
 
     #player1 {
-      border-color: #FF69B4; /* Rosa para Agatha */
-      background-color: #FF69B4; /* Fundo rosa para Agatha */
+      border-color: #FF69B4; /* Pink for Agatha */
     }
 
     #player2 {
-      border-color: #4169E1; /* Azul para Henrique */
-      background-color: #4169E1; /* Fundo azul para Henrique */
+      border-color: #4169E1; /* Royal Blue for Henrique */
     }
 
     #chessboard {
@@ -105,19 +139,32 @@
   </style>
 </head>
 <body>
+
   <header>
     <h1>Xadrez - Agatha vs Henrique</h1>
   </header>
 
-  <main>
+  <main id="main-content">
+    <div id="login-container">
+      <div id="login-form">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Usuário" />
+        <input type="password" id="password" placeholder="Senha" />
+        <button onclick="login()">Entrar</button>
+        <p id="login-error" style="color: red; display: none;">Credenciais inválidas. Tente novamente.</p>
+      </div>
+    </div>
+  </main>
+
+  <div id="chess-game" style="display:none;">
     <div id="players">
-      <div id="player1" class="player"></div> <!-- Agatha (rosa) acima -->
-      <div id="player2" class="player"></div> <!-- Henrique (azul) abaixo -->
+      <div id="player1" class="player"></div>
+      <div id="player2" class="player"></div>
     </div>
 
     <div id="chessboard"></div>
     <div id="turn-display">Vez de: Agatha (Peças Rosas)</div>
-  </main>
+  </div>
 
   <script>
     const board = document.getElementById("chessboard");
@@ -138,6 +185,20 @@
     let currentTurn = 'pink'; // Starting with Agatha (pink)
     let selectedPiece = null;
 
+    // Simple login validation function
+    function login() {
+      const username = document.getElementById("username").value;
+      const password = document.getElementById("password").value;
+
+      if ((username === "henrique" || username === "Agatha") && password === "toja") {
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("chess-game").style.display = "block";
+        renderBoard();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
     function renderBoard() {
       board.innerHTML = "";
       for (let i = 0; i < 8; i++) {
@@ -152,7 +213,7 @@
           if (piece) {
             const pieceElement = document.createElement("span");
             pieceElement.classList.add("piece");
-
+            
             // Determine piece color based on unicode symbol
             if (["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece)) {
               pieceElement.classList.add("blue-piece");
@@ -163,7 +224,7 @@
             pieceElement.textContent = piece;
             pieceElement.dataset.row = i;
             pieceElement.dataset.col = j;
-
+            
             square.appendChild(pieceElement);
           }
 
@@ -212,33 +273,4 @@
       if (clickedPiece) {
         // Check if it's the correct player's turn
         const isPinkPiece = clickedPiece.classList.contains('pink-piece');
-        const isBluePiece = clickedPiece.classList.contains('blue-piece');
-
-        if ((currentTurn === 'pink' && isPinkPiece) || 
-            (currentTurn === 'blue' && isBluePiece)) {
-          // Remove previous selection
-          document.querySelectorAll('.selected').forEach(el => 
-            el.classList.remove('selected'));
-
-          // Highlight selected piece
-          clickedSquare.classList.add('selected');
-          selectedPiece = clickedPiece;
-        }
-      }
-    }
-
-    // Render initial board
-    renderBoard();
-
-    // Player avatars
-    const player1 = document.getElementById("player1");
-    const player2 = document.getElementById("player2");
-
-    player1.style.backgroundImage =
-      "url('https://res.cloudinary.com/base-web/image/fetch/w_128/f_webp/https%3A%2F%2Fbase.mypinata.cloud%2Fipfs%2Fbafkreiauxlzfiyfpboffxayqm3bce6obvuqxebxt65crgchg4edlldkaea%3FpinataGatewayToken%3Df6uqhE35YREDMuFqLvxFLqd-MBRlrJ1qWog8gyCF8T88-Tsiu2IX48F-kyVti78J')";
-
-    player2.style.backgroundImage =
-      "url('https://res.cloudinary.com/base-web/image/fetch/w_128/f_webp/https%3A%2F%2Fzku9gdedgba48lmr.public.blob.vercel-storage.com%2Fbasenames%2Favatar%2Fhenriquetoja.base.eth%2F1724832735795%2FHenriquetoja.eth-03ALzc0cPOlJlWugi3GHBAl0xokXow.jpg')";
-  </script>
-</body>
-</html>
+        const isBluePiece = clickedPiece.classList.contains('blue
