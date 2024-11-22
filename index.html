@@ -26,6 +26,7 @@
 
     #players {
       display: flex;
+      flex-direction: column; /* Alinha os jogadores verticalmente */
       justify-content: space-between;
       margin: 20px auto;
       width: 90%;
@@ -39,14 +40,17 @@
       background-position: center;
       border-radius: 50%;
       border: 3px solid;
+      margin: 10px auto;
     }
 
     #player1 {
-      border-color: #FF69B4; /* Pink for Agatha */
+      border-color: #FF69B4; /* Rosa para Agatha */
+      background-color: #FF69B4; /* Fundo rosa para Agatha */
     }
 
     #player2 {
-      border-color: #4169E1; /* Royal Blue for Henrique */
+      border-color: #4169E1; /* Azul para Henrique */
+      background-color: #4169E1; /* Fundo azul para Henrique */
     }
 
     #chessboard {
@@ -107,8 +111,8 @@
 
   <main>
     <div id="players">
-      <div id="player1" class="player"></div>
-      <div id="player2" class="player"></div>
+      <div id="player1" class="player"></div> <!-- Agatha (rosa) acima -->
+      <div id="player2" class="player"></div> <!-- Henrique (azul) abaixo -->
     </div>
 
     <div id="chessboard"></div>
@@ -148,7 +152,7 @@
           if (piece) {
             const pieceElement = document.createElement("span");
             pieceElement.classList.add("piece");
-            
+
             // Determine piece color based on unicode symbol
             if (["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece)) {
               pieceElement.classList.add("blue-piece");
@@ -159,7 +163,7 @@
             pieceElement.textContent = piece;
             pieceElement.dataset.row = i;
             pieceElement.dataset.col = j;
-            
+
             square.appendChild(pieceElement);
           }
 
