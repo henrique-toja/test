@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xadrez - Agatha vs Henrique</title>
   <style>
-    /* Estilos gerais */
     body {
       font-family: Arial, sans-serif;
       text-align: center;
@@ -16,7 +15,7 @@
     }
 
     header {
-      background-color: #820ad1; /* Cor roxa do projeto */
+      background-color: #820ad1;
       color: white;
       padding: 10px 0;
     }
@@ -25,14 +24,12 @@
       margin: 0;
     }
 
-    /* Contêiner dos jogadores */
     #players {
       display: flex;
       justify-content: space-between;
-      margin-bottom: 20px;
+      margin: 20px auto;
       width: 90%;
       max-width: 400px;
-      margin: 20px auto;
     }
 
     .player {
@@ -41,9 +38,17 @@
       background-size: cover;
       background-position: center;
       border-radius: 50%;
+      border: 3px solid;
     }
 
-    /* Tabuleiro de xadrez */
+    #player1 {
+      border-color: #FF69B4; /* Pink for Agatha */
+    }
+
+    #player2 {
+      border-color: #4169E1; /* Royal Blue for Henrique */
+    }
+
     #chessboard {
       display: grid;
       grid-template-columns: repeat(8, 50px);
@@ -62,6 +67,7 @@
       align-items: center;
       justify-content: center;
       font-size: 24px;
+      position: relative;
     }
 
     .light {
@@ -74,6 +80,23 @@
 
     .piece {
       cursor: grab;
+      user-select: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    .pink-piece {
+      color: #FF69B4;
+    }
+
+    .blue-piece {
+      color: #4169E1;
+    }
+
+    .selected {
+      background-color: rgba(255, 255, 0, 0.3);
     }
   </style>
 </head>
@@ -83,20 +106,20 @@
   </header>
 
   <main>
-    <!-- Contêiner dos jogadores -->
     <div id="players">
       <div id="player1" class="player"></div>
       <div id="player2" class="player"></div>
     </div>
 
-    <!-- Tabuleiro de xadrez -->
     <div id="chessboard"></div>
+    <div id="turn-display">Vez de: Agatha (Peças Rosas)</div>
   </main>
 
   <script>
     const board = document.getElementById("chessboard");
+    const turnDisplay = document.getElementById("turn-display");
 
-    // Representação inicial do tabuleiro com os símbolos das peças de xadrez
+    // Chess pieces unicode symbols
     const initialBoard = [
       ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
       ["♟", "♟", "♟", "♟", "♟", "♟", "♟", "♟"],
@@ -108,9 +131,11 @@
       ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"]
     ];
 
-    // Função para renderizar o tabuleiro
+    let currentTurn = 'pink'; // Starting with Agatha (pink)
+    let selectedPiece = null;
+
     function renderBoard() {
-      board.innerHTML = ""; // Limpa o tabuleiro
+      board.innerHTML = "";
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
           const square = document.createElement("div");
@@ -123,57 +148,85 @@
           if (piece) {
             const pieceElement = document.createElement("span");
             pieceElement.classList.add("piece");
-            pieceElement.textContent = piece; // Adiciona o símbolo da peça
-            pieceElement.draggable = true; // Permite arrastar as peças
-            pieceElement.dataset.row = i; // Armazena a posição da peça
+            
+            // Determine piece color based on unicode symbol
+            if (["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece)) {
+              pieceElement.classList.add("blue-piece");
+            } else {
+              pieceElement.classList.add("pink-piece");
+            }
+
+            pieceElement.textContent = piece;
+            pieceElement.dataset.row = i;
             pieceElement.dataset.col = j;
+            
             square.appendChild(pieceElement);
           }
+
+          // Click event for piece selection and movement
+          square.addEventListener("click", () => handleSquareClick(i, j));
 
           board.appendChild(square);
         }
       }
+
+      // Update turn display
+      turnDisplay.textContent = currentTurn === 'pink' 
+        ? "Vez de: Agatha (Peças Rosas)" 
+        : "Vez de: Henrique (Peças Azuis)";
     }
 
-    // Evento de drag-and-drop para movimentar as peças
-    let draggedPiece = null;
+    function handleSquareClick(row, col) {
+      const clickedSquare = board.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      const clickedPiece = clickedSquare.querySelector(".piece");
 
-    board.addEventListener("dragstart", (e) => {
-      const target = e.target.closest(".piece");
-      if (target) {
-        draggedPiece = target;
-        e.dataTransfer.setData("text/plain", `${draggedPiece.dataset.row},${draggedPiece.dataset.col}`);
+      if (selectedPiece) {
+        // If a piece is already selected, attempt to move
+        const fromRow = parseInt(selectedPiece.dataset.row);
+        const fromCol = parseInt(selectedPiece.dataset.col);
+
+        // Basic move (no chess rules validation yet)
+        if (fromRow !== row || fromCol !== col) {
+          // Move the piece
+          initialBoard[row][col] = selectedPiece.textContent;
+          initialBoard[fromRow][fromCol] = "";
+
+          // Switch turns
+          currentTurn = currentTurn === 'pink' ? 'blue' : 'pink';
+
+          // Remove selection highlight
+          document.querySelectorAll('.selected').forEach(el => 
+            el.classList.remove('selected'));
+
+          selectedPiece = null;
+          renderBoard();
+          return;
+        }
       }
-    });
 
-    board.addEventListener("dragover", (e) => {
-      e.preventDefault(); // Permite o drop
-    });
+      // If no piece was previously selected, select the clicked piece
+      if (clickedPiece) {
+        // Check if it's the correct player's turn
+        const isPinkPiece = clickedPiece.classList.contains('pink-piece');
+        const isBluePiece = clickedPiece.classList.contains('blue-piece');
 
-    board.addEventListener("drop", (e) => {
-      e.preventDefault();
-      const toRow = e.target.dataset.row;
-      const toCol = e.target.dataset.col;
+        if ((currentTurn === 'pink' && isPinkPiece) || 
+            (currentTurn === 'blue' && isBluePiece)) {
+          // Remove previous selection
+          document.querySelectorAll('.selected').forEach(el => 
+            el.classList.remove('selected'));
 
-      // Verifica se é um quadrado válido para a peça ser solta
-      if (toRow && toCol && draggedPiece) {
-        const fromRow = draggedPiece.dataset.row;
-        const fromCol = draggedPiece.dataset.col;
-
-        // Atualiza a posição da peça no tabuleiro
-        initialBoard[fromRow][fromCol] = ""; // Remove a peça da posição inicial
-        initialBoard[toRow][toCol] = draggedPiece.textContent; // Adiciona a peça na nova posição
-
-        // Atualiza o tabuleiro após o movimento
-        renderBoard();
-        draggedPiece = null; // Reseta a peça arrastada
+          // Highlight selected piece
+          clickedSquare.classList.add('selected');
+          selectedPiece = clickedPiece;
+        }
       }
-    });
+    }
 
-    // Renderiza o tabuleiro inicial
+    // Render initial board
     renderBoard();
 
-    // Exibição das informações dos jogadores
+    // Player avatars
     const player1 = document.getElementById("player1");
     const player2 = document.getElementById("player2");
 
