@@ -4,6 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Xadrez - Agatha vs Henrique</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -24,33 +28,77 @@
       margin: 0;
     }
 
-    #chess-game {
-      display: block;
+    #login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    #login-form {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      width: 300px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px;
+      background-color: #820ad1;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #6f06b1;
     }
 
     #players {
       display: flex;
-      justify-content: center;
+      justify-content: space-around;
       margin: 20px auto;
       width: 90%;
       max-width: 400px;
     }
 
     .player {
+      text-align: center;
+    }
+
+    .player-avatar {
       width: 100px;
       height: 100px;
       background-size: cover;
       background-position: center;
       border-radius: 50%;
       border: 3px solid;
+      margin: 0 auto;
     }
 
-    #player1 {
-      border-color: #FF69B4; /* Pink for Agatha */
+    .player-name {
+      margin-top: 10px;
+      font-weight: bold;
     }
 
-    #player2 {
-      border-color: #4169E1; /* Royal Blue for Henrique */
+    #player1 .player-avatar {
+      border-color: #FF69B4;
+    }
+
+    #player2 .player-avatar {
+      border-color: #4169E1;
     }
 
     #chessboard {
@@ -102,29 +150,78 @@
     .selected {
       background-color: rgba(255, 255, 0, 0.3);
     }
+
+    #status-message {
+      margin: 20px 0;
+      font-weight: bold;
+      color: #820ad1;
+    }
+
+    .waiting-message {
+      color: #666;
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
-
   <header>
     <h1>Xadrez - Agatha vs Henrique</h1>
   </header>
 
   <main id="main-content">
-    <div id="chess-game">
-      <div id="players">
-        <div id="player1" class="player" style="background-image: url('agatha-image.jpg');"></div> <!-- Coloque a imagem de Agatha aqui -->
-        <div id="player2" class="player" style="background-image: url('henrique-image.jpg');"></div> <!-- Coloque a imagem de Henrique aqui -->
+    <div id="login-container">
+      <div id="login-form">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Usuário" />
+        <input type="password" id="password" placeholder="Senha" />
+        <button id="login-button">Entrar</button>
+        <p id="login-error" style="color: red; display: none;">Credenciais inválidas. Tente novamente.</p>
       </div>
-
-      <div id="chessboard"></div>
-      <div id="turn-display">Vez de: Agatha (Peças Rosas)</div>
     </div>
   </main>
 
+  <div id="chess-game" style="display:none;">
+    <div id="players">
+      <div id="player1" class="player">
+        <div class="player-avatar"></div>
+        <div class="player-name">Agatha</div>
+      </div>
+      <div id="player2" class="player">
+        <div class="player-avatar"></div>
+        <div class="player-name">Henrique</div>
+      </div>
+    </div>
+
+    <div id="status-message"></div>
+    <div id="chessboard"></div>
+    <div id="turn-display"></div>
+  </div>
+
   <script>
+    // Configuração do Firebase
+    const firebaseConfig = {
+      // Substitua com suas credenciais do Firebase
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_AUTH_DOMAIN",
+      databaseURL: "YOUR_DATABASE_URL",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_STORAGE_BUCKET",
+      messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    // Inicializar Firebase
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     const board = document.getElementById("chessboard");
     const turnDisplay = document.getElementById("turn-display");
+    const statusMessage = document.getElementById("status-message");
+
+    let currentPlayer = null;
+    let gameRef = null;
+    let currentTurn = 'pink';
+    let selectedPiece = null;
 
     const initialBoard = [
       ["♜", "♞", "♝", "♛", "♚", "♝", "♞", "♜"],
@@ -137,11 +234,78 @@
       ["♖", "♘", "♗", "♕", "♔", "♗", "♘", "♖"]
     ];
 
-    let currentTurn = 'pink'; // Starting with Agatha (pink)
-    let selectedPiece = null;
+    async function login() {
+      const username = document.getElementById("username").value.toLowerCase();
+      const password = document.getElementById("password").value;
 
-    // Função para renderizar o tabuleiro
-    function renderBoard() {
+      if ((username === "henrique" && password === "toja") || 
+          (username === "agatha" && password === "toja")) {
+
+        currentPlayer = username;
+
+        // Conectar ao jogo existente ou criar um novo
+        gameRef = database.ref('chess_game');
+
+        const gameSnapshot = await gameRef.once('value');
+        if (!gameSnapshot.exists()) {
+          // Criar novo jogo
+          await gameRef.set({
+            board: initialBoard,
+            currentTurn: 'pink',
+            players: {
+              [username]: true
+            }
+          });
+        } else {
+          // Juntar-se ao jogo existente
+          await gameRef.child('players').update({
+            [username]: true
+          });
+        }
+
+        // Configurar listeners em tempo real
+        setupGameListeners();
+
+        document.getElementById("login-container").style.display = "none";
+        document.getElementById("chess-game").style.display = "block";
+
+        // Atualizar UI com base no jogador atual
+        updatePlayerUI();
+      } else {
+        document.getElementById("login-error").style.display = "block";
+      }
+    }
+
+    function setupGameListeners() {
+      gameRef.on('value', (snapshot) => {
+        const gameData = snapshot.val();
+        if (gameData) {
+          currentTurn = gameData.currentTurn;
+          renderBoard(gameData.board);
+          updateTurnDisplay();
+          updateStatusMessage(gameData.players);
+        }
+      });
+    }
+
+    function updateStatusMessage(players) {
+      const playerCount = Object.keys(players).length;
+      if (playerCount < 2) {
+        statusMessage.textContent = "Aguardando outro jogador...";
+        statusMessage.classList.add('waiting-message');
+      } else {
+        statusMessage.textContent = "";
+        statusMessage.classList.remove('waiting-message');
+      }
+    }
+
+    function updatePlayerUI() {
+      const isAgatha = currentPlayer === 'agatha';
+      document.getElementById("player1").style.opacity = isAgatha ? "1" : "0.5";
+      document.getElementById("player2").style.opacity = isAgatha ? "0.5" : "1";
+    }
+
+    function renderBoard(boardState) {
       board.innerHTML = "";
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 8; j++) {
@@ -151,7 +315,7 @@
           square.dataset.row = i;
           square.dataset.col = j;
 
-          const piece = initialBoard[i][j];
+          const piece = boardState[i][j];
           if (piece) {
             const pieceElement = document.createElement("span");
             pieceElement.classList.add("piece");
@@ -169,25 +333,79 @@
             square.appendChild(pieceElement);
           }
 
-          square.addEventListener("click", () => handleSquareClick(i, j));
-
+          square.addEventListener("click", handleSquareClick);
           board.appendChild(square);
         }
       }
+    }
 
+    async function handleSquareClick(event) {
+      if (!canPlayerMove()) return;
+
+      const square = event.target.closest('.square');
+      const row = parseInt(square.dataset.row);
+      const col = parseInt(square.dataset.col);
+
+      const gameSnapshot = await gameRef.once('value');
+      const currentBoard = gameSnapshot.val().board;
+
+      if (selectedPiece) {
+        // Mover peça
+        const fromRow = parseInt(selectedPiece.dataset.row);
+        const fromCol = parseInt(selectedPiece.dataset.col);
+
+        if (isValidMove(fromRow, fromCol, row, col)) {
+          const newBoard = [...currentBoard];
+          newBoard[row][col] = currentBoard[fromRow][fromCol];
+          newBoard[fromRow][fromCol] = "";
+
+          await gameRef.update({
+            board: newBoard,
+            currentTurn: currentTurn === 'pink' ? 'blue' : 'pink'
+          });
+
+          selectedPiece.closest('.square').classList.remove('selected');
+          selectedPiece = null;
+        }
+      } else if (currentBoard[row][col] && isPieceOwnedByCurrentPlayer(currentBoard[row][col])) {
+        // Selecionar peça
+        square.classList.add('selected');
+        selectedPiece = square.querySelector('.piece');
+      }
+    }
+
+    function canPlayerMove() {
+      return (currentPlayer === 'agatha' && currentTurn === 'pink') ||
+             (currentPlayer === 'henrique' && currentTurn === 'blue');
+    }
+
+    function isPieceOwnedByCurrentPlayer(piece) {
+      const isPinkPiece = !["♟", "♞", "♝", "♛", "♚", "♜"].includes(piece);
+      return (currentPlayer === 'agatha' && isPinkPiece) ||
+             (currentPlayer === 'henrique' && !isPinkPiece);
+    }
+
+    function isValidMove(fromRow, fromCol, toRow, toCol) {
+      // Implementar regras de movimento do xadrez aqui
+      // Por simplicidade, permitindo qualquer movimento por enquanto
+      return true;
+    }
+
+    function updateTurnDisplay() {
       turnDisplay.textContent = currentTurn === 'pink' 
         ? "Vez de: Agatha (Peças Rosas)" 
         : "Vez de: Henrique (Peças Azuis)";
     }
 
-    // Função de clique no quadrado (aqui você pode adicionar a lógica de movimentação das peças)
-    function handleSquareClick(row, col) {
-      // Aqui você pode implementar a lógica de movimentação das peças.
-      console.log(`Quadrado clicado: Linha ${row}, Coluna ${col}`);
-    }
+    // Event Listeners
+    document.getElementById("login-button").addEventListener("click", login);
 
-    renderBoard();
+    // Limpar referências do Firebase ao fechar a página
+    window.addEventListener('beforeunload', () => {
+      if (gameRef && currentPlayer) {
+        gameRef.child('players').child(currentPlayer).remove();
+      }
+    });
   </script>
-
 </body>
 </html>
