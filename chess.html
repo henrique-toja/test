@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xadrez - Agatha vs Henrique</title>
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-auth-compat.js"></script>
+  <style>
+    :root {
+      --header-bg: #2c3e50;
+      --header-gradient: linear-gradient(145deg, #2c3e50, #34495e);
+      --primary-color: #3498db;
+      --accent-color: #e74c3c;
+      --board-light: #ecf0f1;
+      --board-dark: #34495e;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      text-align: center;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      color: #2c3e50;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+    }
+
+    header {
+      background: var(--header-gradient);
+      color: white;
+      padding: 15px 0;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    #login-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+    }
+
+    #login-form {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      width: 320px;
+      transform: perspective(1000px) rotateX(0deg);
+      transition: transform 0.3s ease;
+    }
+
+    #login-form:hover {
+      transform: perspective(1000px) rotateX(5deg);
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: 2px solid #eee;
+      transition: all 0.3s ease;
+      font-size: 16px;
+    }
+
+    input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+      outline: none;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: var(--primary-color);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.3);
+    }
+
+    button:hover {
+      background: #2980b9;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+    }
+
+    #players {
+      display: flex;
+      justify-content: space-around;
+      margin: 30px auto;
+      width: 90%;
+      max-width: 600px;
+      perspective: 1000px;
+    }
+
+    .player {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transform-style: preserve-3d;
+      transition: transform 0.3s ease;
+    }
+
+    .player:hover {
+      transform: translateZ(20px);
+    }
+
+    .player-avatar {
+      width: 120px;
+      height: 120px;
+      background-size: cover;
+      background-position: center;
+      border-radius: 15px;
+      margin: 0 auto;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      transform: translateZ(20px);
+    }
+
+    .player-name {
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 18px;
+      color: #2c3e50;
+    }
+
+    #chessboard {
+      display: grid;
+      grid-template-columns: repeat(8, 60px);
+      grid-template-rows: repeat(8, 60px);
+      gap: 0;
+      margin: 0 auto;
+      width: 480px;
+      height: 480px;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      transform: perspective(1000px) rotateX(10deg);
+      transform-style: preserve-3d;
+      background: #34495e;
+      padding: 10px;
+    }
+
+    .square {
+      width: 60px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 40px;
+      position: relative;
+      transition: all 0.3s ease;
+      transform-style: preserve-3d;
+    }
+
+    .light {
+      background: var(--board-light);
+    }
+
+    .dark {
+      background: var(--board-dark);
+    }
+
+    .piece {
+      cursor: grab;
+      user-select: none;
+      position: absolute;
+      transform-style: preserve-3d;
+      transition: all 0.3s ease;
+      filter: drop-shadow(0 4px 4px rgba(0, 0, 0, 0.3));
+    }
+
+    .piece:hover {
+      transform: translateZ(20px);
+    }
+
+    .pink-piece {
+      color: #FF69B4;
+      text-shadow: 0 2px 4px rgba(255, 105, 180, 0.3);
+    }
+
+    .blue-piece {
+      color: #4169E1;
+      text-shadow: 0 2px 4px rgba(65, 105, 225, 0.3);
+    }
+
+    .selected {
+      background-color: rgba(255, 255, 0, 0.2);
+      box-shadow: inset 0 0 20px rgba(255, 255, 0, 0.4);
+      transform: translateZ(10px);
+    }
+
+    #status-message {
+      margin: 20px 0;
+      font-weight: 600;
+      color: var(--header-bg);
+      font-size: 18px;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+      animation: pulse 2s infinite;
+    }
+
+    #turn-display {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--header-bg);
+      padding: 10px 20px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.7; }
+      100% { opacity: 1; }
+    }
+
+    .waiting-message {
+      color: var(--accent-color);
+      font-style: italic;
+    }
+
+    /* Animações para movimentos das peças */
+    @keyframes movepiece {
+      0% { transform: translateZ(0); }
+      50% { transform: translateZ(30px); }
+      100% { transform: translateZ(0); }
+    }
+
+    .moving {
+      animation: movepiece 0.5s ease;
+    }
+
+    /* Efeito de vidro para containers */
+    .glass-effect {
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 15px;
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+      #chessboard {
+        transform: perspective(1000px) rotateX(5deg);
+        width: 320px;
+        height: 320px;
+        grid-template-columns: repeat(8, 40px);
+        grid-template-rows: repeat(8, 40px);
+      }
+
+      .square {
+        width: 40px;
+        height: 40px;
+        font-size: 30px;
+      }
+
+      .player-avatar {
+        width: 80px;
+        height: 80px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <!-- O resto do HTML permanece o mesmo -->
+  <header>
+    <h1>♔ Xadrez Online - Agatha vs Henrique ♔</h1>
+  </header>
+
+  <!-- O resto do código permanece igual -->
+  
+  <!-- Adicione este script no final do body -->
+  <script>
+    // Adicionar efeitos 3D ao movimento das peças
+    function handlePieceMovement(piece, fromSquare, toSquare) {
+      piece.classList.add('moving');
+      
+      // Calcular a posição final
+      const fromRect = fromSquare.getBoundingClientRect();
+      const toRect = toSquare.getBoundingClientRect();
+      
+      // Animar o movimento
+      piece.style.transition = 'all 0.5s ease';
+      piece.style.transform = `translate(${toRect.left - fromRect.left}px, ${toRect.top - fromRect.top}px) translateZ(30px)`;
+      
+      setTimeout(() => {
+        piece.classList.remove('moving');
+        piece.style.transform = '';
+      }, 500);
+    }
+
+    // Atualizar a função handleSquareClick para incluir a animação
+    async function handleSquareClick(event) {
+      // ... código existente ...
+
+      if (selectedPiece && isValidMove(fromRow, fromCol, toRow, toCol)) {
+        const fromSquare = selectedPiece.closest('.square');
+        const toSquare = square;
+        
+        handlePieceMovement(selectedPiece, fromSquare, toSquare);
+        
+        // ... resto do código existente ...
+      }
+    }
+
+    // Adicionar efeito de hover 3D ao tabuleiro
+    const chessboard = document.getElementById('chessboard');
+    
+    chessboard.addEventListener('mousemove', (e) => {
+      const rect = chessboard.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotateX = (y - centerY) / 30;
+      const rotateY = (centerX - x) / 30;
+      
+      chessboard.style.transform = `perspective(1000px) rotateX(${10 + rotateX}deg) rotateY(${rotateY}deg)`;
+    });
+
+    chessboard.addEventListener('mouseleave', () => {
+      chessboard.style.transform = 'perspective(1000px) rotateX(10deg) rotateY(0deg)';
+    });
+  </script>
+</body>
+</html>
